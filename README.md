@@ -173,13 +173,4 @@ openapi.yaml     mô tả API mẫu
 
 Chạy `npm test` để kiểm tra CRUD, API key, bộ lọc, validation và một số lỗi HTTP. Test mở server trên port tạm, không cần `.env` và không dùng dữ liệu của server đang chạy.
 
-## Bài tập tự kiểm tra
 
-1. Tạo một task, dùng ID trong response để đọc, sửa rồi xóa. Gọi DELETE thêm lần nữa và giải thích kết quả.
-2. So sánh `completed: false` với `completed: "false"`, và body rỗng với JSON sai cú pháp.
-3. Thử PATCH `{}`, gửi field lạ và gửi request thiếu API key; giải thích lỗi xảy ra ở bước nào.
-4. Giải thích vì sao stateless vẫn dùng được database, vì sao decode JWT chưa đủ để xác thực, và vì sao CORS không thay cho phân quyền.
-5. Thêm lọc task theo từ khóa. Cập nhật code, request mẫu, OpenAPI và tài liệu cho tham số mới.
-6. Thiết kế phân trang hoặc phân quyền theo người dùng trên giấy trước khi code. Ghi rõ request, response, trường hợp lỗi và thay đổi nào có thể làm client cũ hỏng.
-
-Nguồn chính thức và phần đọc thêm được đặt ở cuối từng chương, gồm MDN, các RFC liên quan, tài liệu Express và OpenAPI.
