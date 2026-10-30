@@ -1,0 +1,277 @@
+openapi: 3.0.3
+info:
+  title: Tasks API
+  version: 1.0.0
+  description: |
+    API nhỏ để thực hành HTTP, CRUD và API key.
+    Dữ liệu nằm trong bộ nhớ, khởi động lại sẽ trở về dữ liệu mẫu.
+    Các route đọc được truy cập công khai; route ghi cần header x-api-key.
+servers:
+  - url: http://localhost:3000
+paths:
+  /health:
+    get:
+      summary: Kiểm tra server đang chạy
+      responses:
+        '200':
+          description: Server hoạt động
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status]
+                properties:
+                  status:
+                    type: string
+                    enum: [ok]
+        '500':
+          $ref: '#/components/responses/ServerError'
+  /api/tasks:
+    get:
+      summary: Lấy danh sách công việc
+      parameters:
+        - name: completed
+          in: query
+          description: Bỏ trống để lấy tất cả, truyền true hoặc false để lọc.
+          schema:
+            type: string
+            enum: ['true', 'false']
+      responses:
+        '200':
+          description: Danh sách công việc, có thể rỗng
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Task'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/ServerError'
+    post:
+      summary: Tạo công việc
+      security:
+        - ApiKey: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTask'
+            example:
+              title: Đọc về REST API
+              completed: false
+      responses:
+        '201':
+          description: Công việc đã được tạo
+          headers:
+            Location:
+              description: Đường dẫn tới công việc vừa tạo
+              schema:
+                type: string
+                example: /api/tasks/3
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/ServerError'
+  /api/tasks/{id}:
+    parameters:
+      - $ref: '#/components/parameters/TaskId'
+    get:
+      summary: Lấy một công việc
+      responses:
+        '200':
+          description: Công việc tìm được
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
+    patch:
+      summary: Sửa một phần công việc
+      security:
+        - ApiKey: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateTask'
+            example:
+              completed: true
+      responses:
+        '200':
+          description: Công việc sau khi sửa
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/ServerError'
+    delete:
+      summary: Xóa công việc
+      security:
+        - ApiKey: []
+      responses:
+        '204':
+          description: Đã xóa, không có response body
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
+components:
+  securitySchemes:
+    ApiKey:
+      type: apiKey
+      in: header
+      name: x-api-key
+      description: Dùng giá trị API_KEY trong file .env của server.
+  parameters:
+    TaskId:
+      name: id
+      in: path
+      required: true
+      description: ID nguyên dương của công việc.
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 9007199254740991
+      example: 1
+  schemas:
+    Title:
+      type: string
+      description: Tiêu đề đã loại bỏ khoảng trắng ở hai đầu.
+      minLength: 1
+      maxLength: 120
+      example: Đọc về REST API
+    InputTitle:
+      type: string
+      description: |
+        Server trim hai đầu rồi kiểm tra độ dài từ 1 đến 120 ký tự.
+        Giới hạn sau trim được kiểm tra trong code, không bằng maxLength trên input thô.
+      minLength: 1
+      pattern: '\S'
+      example: Đọc về REST API
+    Task:
+      type: object
+      additionalProperties: false
+      required: [id, title, completed]
+      properties:
+        id:
+          type: integer
+          minimum: 1
+          maximum: 9007199254740991
+          example: 1
+        title:
+          $ref: '#/components/schemas/Title'
+        completed:
+          type: boolean
+          example: false
+    CreateTask:
+      type: object
+      additionalProperties: false
+      required: [title]
+      properties:
+        title:
+          $ref: '#/components/schemas/InputTitle'
+        completed:
+          type: boolean
+          default: false
+    UpdateTask:
+      type: object
+      additionalProperties: false
+      minProperties: 1
+      description: Gửi ít nhất một trường; không chấp nhận trường ngoài title và completed.
+      properties:
+        title:
+          $ref: '#/components/schemas/InputTitle'
+        completed:
+          type: boolean
+    TaskResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/Task'
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [message]
+          properties:
+            message:
+              type: string
+              example: Không tìm thấy công việc.
+  responses:
+    BadRequest:
+      description: Body, query hoặc ID không hợp lệ; JSON sai cú pháp hoặc thiếu body.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Thiếu API key hoặc API key không đúng.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Không tìm thấy công việc.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    PayloadTooLarge:
+      description: Request body vượt quá 10 KB (10.240 byte).
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    UnsupportedMediaType:
+      description: Request body phải có Content-Type application/json.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    ServerError:
+      description: Lỗi ngoài dự kiến ở server.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

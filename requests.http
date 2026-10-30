@@ -1,0 +1,58 @@
+@baseUrl = http://localhost:3000
+@apiKey = local-practice-key
+
+### Kiểm tra server
+GET {{baseUrl}}/health
+
+### Danh sách task (không cần key)
+GET {{baseUrl}}/api/tasks
+
+### Chỉ lấy việc chưa xong
+GET {{baseUrl}}/api/tasks?completed=false
+
+### Xem một task
+GET {{baseUrl}}/api/tasks/1
+
+### Tạo task, response có Location và id mới
+POST {{baseUrl}}/api/tasks
+Content-Type: application/json
+x-api-key: {{apiKey}}
+
+{
+  "title": "Viết thử một endpoint",
+  "completed": false
+}
+
+### Đánh dấu task 1 hoàn thành
+PATCH {{baseUrl}}/api/tasks/1
+Content-Type: application/json
+x-api-key: {{apiKey}}
+
+{
+  "completed": true
+}
+
+### Xóa task 1; gọi lại sẽ nhận 404
+DELETE {{baseUrl}}/api/tasks/1
+x-api-key: {{apiKey}}
+
+### Quên key -> 401
+POST {{baseUrl}}/api/tasks
+Content-Type: application/json
+
+{
+  "title": "Request này sẽ bị từ chối"
+}
+
+### Gửi sai kiểu dữ liệu -> 400
+POST {{baseUrl}}/api/tasks
+Content-Type: application/json
+x-api-key: {{apiKey}}
+
+{
+  "title": "Thử validation",
+  "completed": "false"
+}
+
+### Không có task -> 404
+GET {{baseUrl}}/api/tasks/999999
